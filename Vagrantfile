@@ -67,4 +67,8 @@ Vagrant.configure("2") do |config|
   #   apt-get update
   #   apt-get install -y apache2
   # SHELL
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "deployment/playbook.yml"
+    ansible.extra_vars = { ansible_python_interpreter:"/usr/bin/python3" }
+  end
 end
