@@ -1,2 +1,65 @@
 ---
 # tasks file for ./deployment/roles/python
+- name: Install python related packages
+  apt:
+    pkg:
+      - build-essential
+      - python3-dev
+      - libsqlite3-dev
+      - libreadline6-dev
+      - libgdbm-dev
+      - zlib1g-dev
+      - libbz2-dev
+      - sqlite3
+      - tk-dev
+      - zip
+      - libssl-dev
+    update_cache: yes
+
+- name: Check whether python3 is installed
+  command: /opt/python3.6.4/bin/python3 -V
+  register: is_python3_installed
+  check_mode: no
+  changed_when: no
+  failed_when: is_python3_installed.rc not in [0, 2, 127]
+
+- name: Get python3 source file
+  get_url:
+    url: https://www.python.org/ftp/python/3.6.4/Python-3.6.4.tgz
+    dest: /opt/
+  when: is_python3_installed.rc != 0
+
+- name: Extract python3 source file
+  unarchive:
+      src: /opt/Python-3.6.4.tgz
+      dest: /opt/
+      remote_src: yes
+  when: is_python3_installed.rc != 0
+
+- name: Configure python3
+  command: ./configure --prefix=/opt/python3.6.4
+  args:
+    chdir: /opt/Python-3.6.4/
+  when: is_python3_installed.rc != 0
+
+- name: Make python3
+  command: make
+  args:
+    chdir: /opt/Python-3.6.4/
+  when: is_python3_installed.rc != 0
+
+- name: Make install python3
+  command: make install
+  args:
+    chdir: /opt/Python-3.6.4/
+  when: is_python3_installed.rc != 0
+
+- name: Make links to /usr/local/bin
+  file:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    state: link
+  with_items:
+    - { src: /opt/python3.6.4/bin/python3.6, dest: /usr/local/bin/python3.6 }
+    - { src: /opt/python3.6.4/bin/pip3.6, dest: /usr/local/bin/pip }
+  when: is_python3_installed.rc != 0
